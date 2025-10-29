@@ -1,0 +1,15 @@
+gcloud compute target-pools create www-pool \
+  --region=us-west4 \
+  --http-health-check=basic-http-health-check
+
+
+gcloud compute target-pools add-instances www-pool \
+  --instances=web1,web2,web3 \
+  --instances-zone=us-west4-c
+
+
+gcloud compute forwarding-rules create www-rule \
+  --region=us-west4-c \
+  --ports=80 \
+  --address=network-lb-ip-1 \
+  --target-pool=www-pool
