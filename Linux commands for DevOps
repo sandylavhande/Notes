@@ -1,6 +1,7 @@
 hostname - # display the hostname of the machine --> ubuntu
 hostname -i # display the ip address of the machine
 uname #display the flavour name of the machine --> Linux
+uname -a # show kernel name, kernel release, kernel version
 whoami #prints the username of the currently logged-in user --> root
 
 curl ifconfig.me #display the public ip / External ip of the machine
