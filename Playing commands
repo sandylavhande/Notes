@@ -1,0 +1,10 @@
+head -n 5 <filename> # print the first 5 lines of the specified file
+tail -n5 <filename> #The space between -n and the number is optional — tail -n 5 and tail -n5 work the same.
+
+Process Related commands 
+ps # Process Status — it shows currently running processes
+ps -e # Shows all processes running on the system (not just your terminal)
+ps -eaf # full, detailed view of all processes — like a tree structure
+ps -p <pid> #Shows info for a specific process ID
+ps axjf	# Shows process tree (like a hierarchy)
+ps -eo pid,ppid,cmd,%mem,%cpu --sort=-%cpu	#Shows CPU/memory usage sorted by CPU
