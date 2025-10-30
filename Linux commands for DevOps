@@ -1,0 +1,23 @@
+hostname - # display the hostname of the machine --> ubuntu
+hostname -i # display the ip address of the machine
+uname #display the flavour name of the machine --> Linux
+whoami #prints the username of the currently logged-in user --> root
+
+curl ifconfig.me #display the public ip / External ip of the machine
+ifconfig #interface configuration eth0/eth1
+
+ls # list the directories
+ls -a # list all files and directories, including hidden ones
+ls -la # all files (including hidden) in long format (permissions, owner, size, etc.)
+ls -lrt #| Option | Meaning                                                                       |
+| ------ | ----------------------------------------------------------------------------- |
+| `-l`   | Long listing format (shows details like permissions, owner, size, date, etc.) |
+| `-r`   | Reverse order of the listing                                                  |
+| `-t`   | Sort files by modification time (newest last)                                 |
+
+mv # to move or rename files and directories.
+rm # remove files
+rmdir # remove directories
+rm -r dirname # Deletes directory and all contents (recursive)
+rm -ri <file/directory/foldername>
+man # to get the information of commands
