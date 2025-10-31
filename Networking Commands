@@ -9,3 +9,20 @@ ping -i 2 google.com # Set interval between packets
 | Check DNS resolution               | `ping google.com`       |
 | Measure latency                    | `ping -c 5 example.com` |
 | Test internal network connectivity | `ping 192.168.1.1`      |
+
+netstat #It displays active network connections, listening ports, routing tables, and interface statistics -->all active TCP connections.
+
+| Command      | Description                                                  |
+| ------------ | ------------------------------------------------------------ |
+| `netstat -a` | Show **all** active connections and listening ports          |
+| `netstat -t` | Show only **TCP** connections                                |
+| `netstat -u` | Show only **UDP** connections                                |
+| `netstat -l` | Show only **listening** sockets                              |
+| `netstat -n` | Show addresses **numerically** (no DNS resolution)           |
+| `netstat -p` | Show **process ID (PID)** and program name using each socket |
+| `netstat -r` | Display **routing table** (like `route -n`)                  |
+| `netstat -i` | Show **interface statistics**                                |
+| `netstat -s` | Show **network statistics** by protocol                      |
+
+free # command is used to display the total amount of free and used physical memory (RAM) and swap memory in a Linux system
+
