@@ -14,3 +14,21 @@ ps -eo pid,cmd # ps -eo pid,cmd
 ps -C nginx # Find process by name
 
 cat /etc/os-release # shows detailed information about the operating system you’re running — such as name, version, ID, and version code name
+
+User related commands
+useradd # creates the user entry, but no home directory or password, does not automatically create home directories or set passwords
+
+adduser # High-level, user-friendly command, Automatically creates home directory, shell, and group
+passwd # set/ change password for the user
+userdel # delete the user
+addgroup # Automatically creates the group and handles defaults for you --> debian/ubuntu
+
+groupadd #Low-level All Linux distros
+grep <groupname> /etc/group # Show users in group
+
+getent group <groupname> #
+
+chmod g+r <file>     # Add read permission to group
+chmod g+w <file>     # Add write permission
+chmod g+x <file>     # Add execute permission
+chmod g-rwx <file>   # Remove all permissions from group
