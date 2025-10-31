@@ -32,3 +32,6 @@ chmod g+r <file>     # Add read permission to group
 chmod g+w <file>     # Add write permission
 chmod g+x <file>     # Add execute permission
 chmod g-rwx <file>   # Remove all permissions from group
+
+
+sudo usermod -aG <groupname> <username> #Add a user to a group
