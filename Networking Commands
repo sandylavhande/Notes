@@ -1,0 +1,11 @@
+ifconfig # to view and configure network interfaces
+ping # to check connectivity between two nodes --> It sends ICMP Echo Request packets and waits for ICMP Echo Reply responses
+ping -c 5 google.com # Send specific number of packets
+ping -i 2 google.com # Set interval between packets
+  common usecase :- 
+| Task                               | Example                 |
+| ---------------------------------- | ----------------------- |
+| Check if a host is reachable       | `ping 8.8.8.8`          |
+| Check DNS resolution               | `ping google.com`       |
+| Measure latency                    | `ping -c 5 example.com` |
+| Test internal network connectivity | `ping 192.168.1.1`      |
