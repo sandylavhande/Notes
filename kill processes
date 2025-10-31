@@ -1,0 +1,22 @@
+| Signal Number | Signal Name | Description                                                                                          |
+| ------------- | ----------- | ---------------------------------------------------------------------------------------------------- |
+| **1**         | `SIGHUP`    | Hang up — restarts a process or reloads its configuration (common for daemons like `nginx`, `sshd`). |
+| **2**         | `SIGINT`    | Interrupt — same as pressing **Ctrl+C** in terminal. Gracefully stops a process.                     |
+| **3**         | `SIGQUIT`   | Quit — stops process and produces a **core dump** for debugging.                                     |
+| **4**         | `SIGILL`    | Illegal instruction — process tried to execute an invalid CPU instruction.                           |
+| **5**         | `SIGTRAP`   | Trap — used mainly for debugging and breakpoints.                                                    |
+| **6**         | `SIGABRT`   | Abort — sent by process to itself on serious error (via `abort()` call).                             |
+| **7**         | `SIGBUS`    | Bus error — memory access error.                                                                     |
+| **8**         | `SIGFPE`    | Floating-point exception — division by zero or similar math error.                                   |
+| **9**         | `SIGKILL`   | Kill — **immediately terminates** the process (cannot be ignored or caught).                         |
+| **10**        | `SIGUSR1`   | User-defined signal #1 — can be used by apps for custom actions.                                     |
+| **11**        | `SIGSEGV`   | Segmentation fault — invalid memory access.                                                          |
+| **12**        | `SIGUSR2`   | User-defined signal #2 — custom action.                                                              |
+| **13**        | `SIGPIPE`   | Broken pipe — writing to a pipe with no reader.                                                      |
+| **14**        | `SIGALRM`   | Alarm — used for timing operations (e.g., via `alarm()` function).                                   |
+| **15**        | `SIGTERM`   | Terminate — **gracefully** ends a process (default signal for `kill`).                               |
+| **16**        | `SIGSTKFLT` | Stack fault — rarely used, for coprocessor stack errors.                                             |
+| **17**        | `SIGCHLD`   | Child status changed — sent to a parent when a child process stops or ends.                          |
+| **18**        | `SIGCONT`   | Continue — resumes a stopped process.                                                                |
+| **19**        | `SIGSTOP`   | Stop — **pauses** a process (cannot be ignored).                                                     |
+| **20**        | `SIGTSTP`   | Terminal stop — same as pressing **Ctrl+Z**, pauses a process.                                       |
