@@ -1,0 +1,184 @@
+🧩 EBS Scenario-Based Interview Questions and Answers
+1️⃣ Scenario: Your EC2 instance is running out of disk space. How do you increase the EBS volume size without downtime?
+Answer:
+Stop or keep the instance running (EBS supports live resize).
+In AWS Console → EC2 → Volumes, choose “Modify Volume.”
+Increase the volume size (e.g., 30 GB → 50 GB).
+Wait until the volume state becomes “optimizing.”
+Resize the filesystem inside the instance:
+
+For Linux:
+sudo growpart /dev/xvda 1
+sudo resize2fs /dev/xvda1
+
+For Windows: use Disk Management → Extend Volume.
+
+✅ No downtime needed for EBS-based root or data volumes (gp2/gp3/io1/io2).
+
+2️⃣ Scenario: An EBS volume was accidentally detached from an EC2 instance. How do you reattach it safely?
+Answer:
+Go to EC2 → Volumes → select the detached volume.
+Choose Attach Volume → select the target EC2 instance.
+Note the device name (e.g., /dev/xvdf).
+On EC2, verify it:
+lsblk
+sudo file -s /dev/xvdf
+Mount it:
+sudo mkdir /data
+sudo mount /dev/xvdf /data
+Best Practice:
+Always label and document volume–instance mappings for quick recovery.
+
+3️⃣ Scenario: You terminated an EC2 instance but lost the attached data. Why and how can you prevent this next time?
+
+Answer:
+By default, the root EBS volume of an EC2 instance is deleted upon termination.
+You can prevent this by disabling “Delete on termination” at creation or after launch.
+Fix for next time:
+aws ec2 modify-instance-attribute \
+  --instance-id i-0123456789abcdef \
+  --block-device-mappings '[{"DeviceName":"/dev/xvda","Ebs":{"DeleteOnTermination":false}}]'
+
+4️⃣ Scenario: How do you back up an EBS volume automatically every day?
+Answer:
+Use Amazon Data Lifecycle Manager (DLM):
+Go to EC2 → Lifecycle Manager → Create Policy.
+Choose resource type: EBS Volume or Instance.
+Define backup schedule (e.g., daily at 12 AM).
+Retain snapshots (e.g., keep last 7 backups).
+Apply tags like Backup=true to identify volumes.
+
+Alternative: Automate via a Lambda + CloudWatch Event that calls:
+aws ec2 create-snapshot --volume-id vol-xxxx --description "Daily backup"
+
+5️⃣ Scenario: How do you restore data from an old EBS snapshot?
+
+Answer:
+Go to Snapshots → select the snapshot.
+Choose Create Volume from Snapshot → pick the same AZ.
+Attach the new volume to any EC2 instance.
+Mount and access files.
+Optional: Copy snapshots across regions for DR setup.
+
+6️⃣ Scenario: You’re asked to move an EBS volume from one region to another.
+Answer:
+EBS volumes are AZ-specific, but you can move them via snapshots:
+Take a snapshot of the volume.
+Copy the snapshot to the target region:
+aws ec2 copy-snapshot --source-region us-east-1 \
+--source-snapshot-id snap-12345 --destination-region eu-west-1
+Create a new volume from the copied snapshot in the destination region.
+
+7️⃣ Scenario: How do you migrate an EBS volume between AZs in the same region?
+
+Answer:
+Same method as above:
+Take a snapshot of the volume.
+Create a new volume in the target AZ from that snapshot.
+Detach old volume → attach new one to instance in the new AZ.
+
+8️⃣ Scenario: Your EC2 instance performance is slow. How do you verify if EBS is the bottleneck?
+Answer:
+Check CloudWatch metrics for:
+VolumeReadOps, VolumeWriteOps
+VolumeQueueLength (if > 1 for long periods → I/O bottleneck)
+VolumeThroughputPercentage
+Use iostat or dstat inside instance to check disk I/O usage.
+Fix:
+Switch to faster volume type (gp3 → io1 or io2).
+Enable EBS-optimized instance type.
+Use Provisioned IOPS (io1/io2) for consistent latency.
+
+9️⃣ Scenario: You accidentally deleted an EBS volume but need the data. Can it be recovered?
+Answer:
+❌ No direct recovery once deleted.
+✅ However, if you had a snapshot, you can restore from it.
+Snapshots are incremental and stored in S3 (durable and recoverable).
+Best Practice: Automate periodic snapshots of critical volumes.
+
+🔟 Scenario: How do you encrypt an existing unencrypted EBS volume?
+Answer:
+EBS encryption cannot be enabled in-place — but you can create an encrypted copy.
+Steps:
+Create a snapshot of the unencrypted volume.
+Copy the snapshot and enable encryption:
+aws ec2 copy-snapshot --source-snapshot-id snap-123 --encrypted
+Create a new volume from this encrypted snapshot.
+Detach old volume and attach the new encrypted one.
+
+11️⃣ Scenario: You want to share an EBS snapshot with another AWS account.
+Answer:
+Modify snapshot permissions:
+aws ec2 modify-snapshot-attribute \
+  --snapshot-id snap-12345 \
+  --attribute createVolumePermission \
+  --operation-type add \
+  --user-ids 987654321000
+The target account can now create a volume from that snapshot.
+(For encrypted snapshots, share the KMS key permissions too.)
+
+12️⃣ Scenario: You notice your snapshots are taking up too much storage. Why?
+
+Answer:
+Snapshots are incremental, but deleting a parent snapshot can cause AWS to merge data, increasing size temporarily.
+Also, if you take too many unnecessary snapshots, even small deltas add cost.
+Fix:
+Use Lifecycle Policies to automatically delete older snapshots (e.g., retain only last 7).
+
+13️⃣ Scenario: You created a new gp3 volume, but performance is low. Why?
+Answer:
+gp3 volumes have default IOPS = 3000 and throughput = 125 MB/s.
+You must manually configure higher IOPS/throughput if needed:
+aws ec2 modify-volume --volume-id vol-xxxx --iops 6000 --throughput 250
+
+14️⃣ Scenario: Your application writes large sequential files (e.g., logs). Which EBS type should you choose?
+Answer:
+Use st1 (Throughput Optimized HDD) for large, sequential workloads (e.g., logs, data warehouses).
+For small random I/O (databases, apps) → gp3 or io2.
+
+15️⃣ Scenario: You have multiple EBS volumes and want to combine them into one large logical disk.
+Answer:
+Use LVM (Logical Volume Manager):
+Attach all volumes.
+Create physical volumes:
+sudo pvcreate /dev/xvdf /dev/xvdg
+Create volume group and logical volume.
+Format and mount.
+⚠️ LVM can increase size, but does not increase IOPS beyond combined total.
+
+16️⃣ Scenario: You want to automatically delete EBS volumes that are not attached to any EC2 instance.
+Answer:
+Use AWS Lambda + EventBridge rule or run periodically:
+aws ec2 describe-volumes --filters Name=status,Values=available \
+--query "Volumes[*].VolumeId" --output text | \
+xargs -n1 aws ec2 delete-volume --volume-id
+
+17️⃣ Scenario: You need to ensure that all new EBS volumes are encrypted by default.
+nswer:
+Enable EBS encryption by default:
+Go to EC2 → Settings → EBS Encryption → Enable
+Or via CLI:
+aws ec2 enable-ebs-encryption-by-default
+All new volumes/snapshots created after that will be encrypted automatically.
+
+18️⃣ Scenario: You need high IOPS (50,000+) for a production database. What’s your solution?
+
+Answer:
+Use io2 Block Express volumes — support up to 64 TB and 256,000 IOPS.
+Attach to Nitro-based instances (e.g., m5n, r5b, c6i).
+Set IOPS explicitly during creation.
+
+19️⃣ Scenario: You want to track changes or usage patterns of all EBS volumes in your account.
+Answer:
+Use AWS Config to track volume creation/deletion/modifications.
+Use CloudWatch metrics for performance.
+Use Trusted Advisor → “Underutilized EBS volumes” check.
+
+20️⃣ Scenario: You want to simulate EBS volume failure for testing DR.
+Answer:
+Stop the EC2 instance.
+Detach the volume.
+Attach a “corrupted” or blank volume.
+Test recovery via restoring snapshot → re-attach restored volume → restart instance.
+
+This helps validate disaster recovery and backup integrity.
