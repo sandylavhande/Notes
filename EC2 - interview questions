@@ -1,0 +1,180 @@
+🧩 Scenario-Based EC2 Interview Questions and Answers
+
+1️⃣ Scenario: EC2 instance not reachable (can’t SSH or access website)
+Question: Your EC2 instance is running, but you can’t SSH or access it. What steps will you take?
+Answer:
+Check Security Group: Ensure inbound rule for port 22 (SSH) or 80/443 (web).
+Check NACL: Must allow inbound/outbound traffic.
+Check Route Table: Default route (0.0.0.0/0) should point to an Internet Gateway (for public instance).
+Check Subnet: Must have public IP and be in a public subnet.
+Ping/SSH test: Use ping or telnet <ip> 22.
+Check System & Instance status checks in AWS Console.
+Check OS firewall (ufw/iptables) if everything else is fine.
+Tip: If public IP changes after stop/start, assign an Elastic IP.
+
+2️⃣ Scenario: Instance is running but website not opening
+Question: Website hosted on EC2 isn’t loading, what will you do?
+Answer:
+Check if web service is running (e.g., Apache/Nginx).
+sudo systemctl status nginx
+Verify port 80/443 is open in SG.
+Confirm application logs (e.g., /var/log/nginx/error.log).
+Test curl localhost to verify app runs locally.
+If works locally but not publicly → security group / firewall issue.
+
+3️⃣ Scenario: EC2 instance stuck in "stopping" state
+
+Answer:
+Usually caused by EBS or instance metadata issues.
+Try:
+aws ec2 describe-instances --instance-id <id>
+If persists, force stop via AWS CLI:
+aws ec2 stop-instances --instance-ids <id> --force
+If still stuck, contact AWS Support.
+
+4️⃣ Scenario: You need to move EC2 from one region to another
+Answer:
+Create AMI of the instance.
+Copy AMI to target region:
+aws ec2 copy-image --source-region ap-south-1 --source-image-id ami-123 --region eu-west-1 --name "CopiedAMI"
+Launch instance from new AMI.
+Update DNS or Elastic IP if needed.
+
+5️⃣ Scenario: EC2 instance disk is full — how to fix without downtime?
+Answer:
+Stop writing logs or services temporarily.
+Check disk usage:
+df -h
+du -sh /*
+Create a snapshot of EBS volume (backup).
+Create a larger EBS volume or increase size.
+Extend filesystem:
+sudo growpart /dev/xvda 1
+sudo resize2fs /dev/xvda1
+
+
+✅ No data loss, minimal downtime.
+
+6️⃣ Scenario: Website hosted on EC2 is slow
+
+Answer:
+Check CPU and Memory with top or CloudWatch metrics.
+Check disk I/O using iostat or vmstat.
+Check network latency using ping and traceroute.
+If web server is overloaded — scale up or use Auto Scaling Group.
+Add CloudFront CDN for caching static content.
+
+7️⃣ Scenario: Set up auto start/stop for cost saving
+Answer:
+Use AWS Lambda with CloudWatch Event (Schedule).
+Create two Lambda functions:
+One to start EC2s in the morning.
+One to stop them at night.
+Example Lambda snippet:
+import boto3
+ec2 = boto3.client('ec2')
+ec2.start_instances(InstanceIds=['i-0123'])
+Schedule with cron-like syntax in CloudWatch Events.
+use crontab guru to get the exact cron expression
+
+8️⃣ Scenario: Zero downtime deployment on EC2
+Answer:
+Use Blue/Green or Rolling Deployment:
+Create two environments: Blue (current) and Green (new).
+Deploy new version on Green.
+Test → Switch Load Balancer target group to Green.
+Roll back easily if failure occurs.
+
+9️⃣ Scenario: Auto scaling based on CPU usage
+
+Answer:
+Create Launch Template.
+Create Auto Scaling Group (ASG) with min/max/desired capacity.
+Add CloudWatch Alarm → triggers scale out/in based on CPU threshold (e.g., >70%).
+Example:
+Scale out: CPU > 70% for 5 mins
+Scale in: CPU < 30% for 5 mins
+
+🔟 Scenario: EC2 access from private subnet
+
+Answer:
+Use Bastion Host (Jump Box) in a public subnet.
+SSH into bastion → then SSH into private EC2 using private IP.
+ssh -i key.pem ec2-user@<bastion-public-ip>
+ssh -i key.pem ec2-user@<private-ip>
+
+11️⃣ Scenario: Enable monitoring for EC2 memory & disk
+
+Answer:
+Install CloudWatch Agent on instance:
+sudo yum install amazon-cloudwatch-agent
+sudo /opt/aws/amazon-cloudwatch-agent/bin/amazon-cloudwatch-agent-config-wizard
+Configure metrics (CPU, Memory, Disk).
+View in CloudWatch Dashboard.
+
+12️⃣ Scenario: Rollback to previous version of EC2 app
+
+Answer:
+Keep old AMI or snapshot before deployment.
+If failure: stop new instance → launch old AMI.
+Use Elastic Load Balancer to redirect traffic back.
+
+13️⃣ Scenario: Host high-availability web app
+
+Answer:
+Use 2+ EC2 instances across multiple AZs.
+Put them behind an Application Load Balancer (ALB).
+Use Auto Scaling Group.
+Store session/state in RDS or DynamoDB.
+Use CloudWatch and SNS alerts for health monitoring.
+
+14️⃣ Scenario: EC2 instance rebooted automatically
+
+Answer:
+Check AWS Health Dashboard → possible maintenance.
+Review system logs for kernel panic or out-of-memory (OOM).
+Verify CloudWatch Alarm automation or Lambda triggers.
+Consider changing Availability Zone if frequent.
+
+15️⃣ Scenario: Application requires temporary compute for batch jobs
+Answer:
+Use EC2 Spot Instances — cost-effective for non-critical workloads.
+Combine with Auto Scaling Group to automatically replace interrupted spot instances.
+
+16️⃣ Scenario: Need to give EC2 limited S3 access without credentials
+Answer:
+Create IAM Role with required S3 permissions.
+Attach it to the EC2 instance.
+✅ The application can access S3 securely using instance metadata:
+curl http://169.254.169.254/latest/meta-data/iam/security-credentials/
+
+17️⃣ Scenario: EC2 instance stopped — data missing
+
+Answer:
+If root volume was Instance Store, data is gone permanently.
+If it was EBS-backed, data persists unless “Delete on Termination” = true.
+Check in console → Volumes → Attach volume if detached.
+
+18️⃣ Scenario: SSH key lost — can’t connect
+
+Answer:
+Option 1: Use EC2 Instance Connect (browser-based SSH).
+Option 2:
+Stop instance.
+Detach root EBS volume.
+Attach to another instance.
+Add new key to ~/.ssh/authorized_keys.
+Reattach and start the instance.
+
+19️⃣ Scenario: Need to monitor instance cost and usage
+Answer:
+Use Cost Explorer, Billing Dashboard, or AWS Compute Optimizer.
+Use CloudWatch metric: CPUUtilization to identify idle EC2s.
+Tag instances with owner/project and use Cost Allocation Reports.
+
+20️⃣ Scenario: Scale web servers for a flash sale
+Answer:
+Use Launch Template + Auto Scaling Group with pre-warmed AMIs.
+Attach Application Load Balancer.
+Configure scaling based on CPU or request count.
+Pre-scale before the sale using scheduled scaling.
