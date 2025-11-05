@@ -1,0 +1,151 @@
+🧠 1. Scenario: High Traffic Web Application
+Question:
+Your website is hosted on multiple EC2 instances in different Availability Zones. During peak hours, users face delays in response. How can you improve performance and availability?
+Answer:
+Deploy an Application Load Balancer (ALB) in front of the EC2 instances.
+ALB will automatically distribute incoming traffic across multiple instances in multiple AZs.
+Enable cross-zone load balancing to evenly distribute traffic across AZs.
+Configure Auto Scaling Group (ASG) behind the ALB to add/remove instances based on load.
+Use health checks to route traffic only to healthy instances.
+
+⚙️ 2. Scenario: Path-Based Routing
+Question:
+Your company has one website — example.com. You want requests for /api to go to backend EC2 instances and /images to go to a static content server. How will you configure this?
+Answer:
+Use an Application Load Balancer (ALB).
+Configure path-based routing rules:
+/api/* → Target Group 1 (backend EC2s)
+/images/* → Target Group 2 (content EC2s or S3 static website)
+ALB checks the request path and forwards traffic accordingly.
+
+🔒 3. Scenario: HTTPS Security
+Question:
+Your company wants all HTTP requests to automatically redirect to HTTPS. How do you implement this?
+Answer:
+Configure ALB listeners:
+Port 80 (HTTP) → Redirect to port 443 (HTTPS).
+Port 443 (HTTPS) → Forward to target group.
+Attach an SSL/TLS certificate using AWS Certificate Manager (ACM).
+This ensures all users connect securely without manual redirection.
+
+🧩 4. Scenario: Sticky Sessions
+Question:
+You have a web app that maintains user sessions in-memory. When a user’s request goes to another instance, they get logged out. How do you fix it?
+Answer:
+Enable Sticky Sessions (session affinity) in the ALB or Classic Load Balancer.
+This ensures all requests from a specific client go to the same instance.
+Alternatively, move sessions to a central store (e.g., DynamoDB, ElastiCache) for scalability.
+
+🕵️‍♂️ 5. Scenario: Health Check Failing
+Question:
+Your target EC2 instances show “Unhealthy” in the load balancer. What could be the issue and how to troubleshoot?
+Answer:
+Possible causes:
+Incorrect health check path – e.g., checking / instead of /health.
+Security Group – LB cannot reach instance on the health check port.
+Application not running or misconfigured.
+Firewall rules / NACLs blocking traffic.
+
+✅ Fix:
+Verify health check path, port, and response code (200 OK).
+Ensure Security Group of LB allows outbound to target and vice versa.
+Check app logs and CloudWatch metrics.
+
+💰 6. Scenario: Cost Optimization
+Question:
+You’re using an Application Load Balancer with very low traffic (few requests per day). How do you reduce costs?
+Answer:
+
+If you don’t need Layer 7 features, use a Network Load Balancer (NLB) or even Route 53 weighted routing for simple use cases.
+
+Stop idle EC2 instances when not needed.
+
+Use AWS Compute Optimizer to check load balancer utilization.
+
+⚡ 7. Scenario: Multi-Region Deployment
+
+Question:
+You have an application running in two AWS Regions. How can you route users to the nearest region for faster performance?
+
+Answer:
+
+Use Route 53 Latency-Based Routing with two ALBs (one in each region).
+
+Route users to the ALB with lowest latency.
+
+Optionally use AWS Global Accelerator for even faster global performance.
+
+🚧 8. Scenario: Internal Load Balancing
+
+Question:
+Your microservices architecture requires internal communication between private EC2 instances. How can you balance traffic internally?
+
+Answer:
+
+Create an Internal Application Load Balancer (not internet-facing).
+
+Place it in private subnets.
+
+Allow only internal VPC traffic via Security Groups.
+
+Microservices can communicate securely without exposing endpoints publicly.
+
+📉 9. Scenario: Sudden Spike in Traffic
+
+Question:
+Your site traffic suddenly spikes during a sale event. How will ELB handle this?
+
+Answer:
+
+ELB automatically scales horizontally to handle sudden load spikes.
+
+ALB/NLB scale dynamically based on request load.
+
+Ensure Auto Scaling Group is configured to add more EC2 instances quickly.
+
+Use pre-warming if a predictable large spike is expected (for Classic LB).
+
+🧰 10. Scenario: Monitoring & Troubleshooting
+
+Question:
+How do you monitor and debug performance issues in ELB?
+
+Answer:
+
+Use CloudWatch metrics:
+
+RequestCount, Latency, HTTPCode_ELB_5XX_Count, etc.
+
+Enable Access Logs to analyze request patterns.
+
+Use AWS X-Ray for tracing requests through load balancer → backend services.
+
+Review target health reports for instance-level failures.
+
+🏁 11. Scenario: WebSocket or TCP Traffic
+
+Question:
+Your app requires low-latency TCP or WebSocket connections. Which Load Balancer should you choose?
+
+Answer:
+
+Use a Network Load Balancer (NLB) — designed for ultra-low latency TCP/UDP traffic.
+
+Supports static IPs and preserves source IP.
+
+If using WebSockets at Layer 7, ALB also supports persistent connections.
+
+🔄 12. Scenario: Blue-Green Deployment
+
+Question:
+You want zero-downtime deployment for a web app behind an ALB. How will you achieve it?
+
+Answer:
+
+Create two target groups: one for “blue” (current) and one for “green” (new version).
+
+Register “green” instances once deployed and tested.
+
+Update ALB listener rule to switch traffic to “green” instantly.
+
+Roll back easily if an issue occurs.
