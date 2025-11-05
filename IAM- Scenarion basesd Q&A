@@ -1,0 +1,206 @@
+🧩 IAM Scenario-Based Interview Questions and Answers
+
+1️⃣ Scenario: A developer accidentally got full admin access to AWS. How will you restrict or fix this?
+Answer:
+Go to the IAM Console and find the user or group.
+Detach the AdministratorAccess policy immediately.
+Replace it with least privilege policies — only what’s required (e.g., AmazonS3ReadOnlyAccess).
+Enable IAM Access Analyzer to detect any over-permissive policies.
+Implement approval workflow for future privilege escalations.
+Best Practice:
+Follow the Principle of Least Privilege — never assign full access unless necessary.
+
+2️⃣ Scenario: You need to allow EC2 to access S3 securely without storing AWS keys.
+Answer:
+Use an IAM Role attached to the EC2 instance.
+Steps:
+Create an IAM Role with policy (e.g., AmazonS3ReadOnlyAccess).
+Attach the role to the EC2 instance during or after launch.
+EC2 will use instance metadata to fetch temporary credentials from STS.
+Reason:
+This avoids hardcoding AWS credentials inside applications or scripts.
+
+3️⃣ Scenario: One user should only be able to list S3 buckets, but not read or write objects.
+Answer:
+Attach a custom IAM policy to that user:
+{
+  "Effect": "Allow",
+  "Action": ["s3:ListAllMyBuckets"],
+  "Resource": "*"
+}
+This allows only listing of buckets — no access to bucket contents.
+Tip: For bucket-level access, use "s3:ListBucket" on specific resources.
+
+4️⃣ Scenario: A contractor should have temporary access for 7 days. How will you give it?
+Answer:
+Use IAM Roles + Temporary Credentials:
+Create a role with required permissions.
+Generate STS temporary credentials using aws sts assume-role.
+Or, create an IAM user and manually delete or disable it after 7 days.
+Best option: use IAM Identity Center (SSO) or Access Analyzer to manage temporary access automatically.
+
+5️⃣ Scenario: You want to force all users to enable MFA before accessing the AWS console.
+Answer:
+Use an IAM Policy Condition:
+
+{
+  "Effect": "Deny",
+  "Action": "*",
+  "Resource": "*",
+  "Condition": {
+    "BoolIfExists": {"aws:MultiFactorAuthPresent": "false"}
+  }
+}
+Attach it at the root level (Organization SCP or IAM policy).
+Users without MFA enabled will be denied access.
+
+6️⃣ Scenario: You suspect someone is using IAM user access keys that shouldn’t exist. What do you do?
+Answer:
+Go to IAM → Users → Security Credentials.
+Check active access keys and disable suspicious ones.
+Use CloudTrail to identify API calls made with those keys.
+Rotate all access keys periodically using AWS Secrets Manager or automation scripts.
+
+7️⃣ Scenario: You want to grant a user access to manage EC2 but not to terminate instances.
+Answer:
+Attach a custom IAM policy that denies termination:
+{
+  "Effect": "Allow",
+  "Action": "ec2:*",
+  "Resource": "*"
+},
+{
+  "Effect": "Deny",
+  "Action": "ec2:TerminateInstances",
+  "Resource": "*"
+}
+Reason:
+IAM policies are evaluated in order, but an explicit Deny always overrides Allow.
+
+8️⃣ Scenario: How do you allow users from another AWS account to access your S3 bucket?
+Answer:
+Use a cross-account IAM role or bucket policy.
+Option 1 — Cross-Account Role:
+In Account A (owner): create an IAM role with a trust policy allowing Account B.
+In Account B: assume the role using STS (aws sts assume-role).
+Option 2 — Bucket Policy:
+
+{
+  "Effect": "Allow",
+  "Principal": {"AWS": "arn:aws:iam::222222222222:root"},
+  "Action": "s3:GetObject",
+  "Resource": "arn:aws:s3:::mybucket/*"
+}
+
+9️⃣ Scenario: You need to audit which IAM users have access to a specific S3 bucket or EC2 instance.
+Answer:
+Use IAM Access Analyzer to generate a resource-based access report.
+Use AWS Policy Simulator to test IAM permissions for specific actions.
+Or check CloudTrail logs for real access events.
+Best Practice:
+Regularly audit access via IAM Access Advisor to remove unused permissions.
+
+🔟 Scenario: You have multiple AWS accounts — how do you manage users centrally?
+Answer:
+Use AWS IAM Identity Center (SSO) or AWS Organizations:
+Create users in the central Identity Center.
+Link other accounts under AWS Organization.
+Assign permission sets (mapped roles) to users or groups.
+Users can access multiple accounts from one sign-in page.
+
+11️⃣ Scenario: Your IAM policy gives full access, but a user still gets “Access Denied.” Why?
+Answer:
+Possible causes:
+An explicit Deny in another policy (e.g., SCP) overrides.
+Service Control Policy (SCP) in AWS Organizations restricts access.
+Resource policy (like S3 bucket policy) doesn’t allow the action.
+IAM permissions boundary limits permissions.
+MFA or conditions not satisfied.
+Troubleshoot:
+Use IAM Policy Simulator to test effective permissions.
+
+12️⃣ Scenario: You want to track changes made to IAM roles and policies.
+Answer:
+Enable AWS CloudTrail — it logs every IAM API call.
+Filter CloudTrail events by:
+CreateRole, AttachRolePolicy, PutRolePolicy, etc.
+Optionally, set CloudWatch Alarms for specific IAM changes.
+
+13️⃣ Scenario: You need to allow a Lambda function to read from DynamoDB and write logs to CloudWatch.
+Answer:
+Attach an IAM Execution Role to Lambda:
+{
+  "Effect": "Allow",
+  "Action": ["dynamodb:GetItem", "dynamodb:Scan"],
+  "Resource": "arn:aws:dynamodb:us-east-1:123456789012:table/MyTable"
+},
+{
+  "Effect": "Allow",
+  "Action": ["logs:CreateLogGroup", "logs:CreateLogStream", "logs:PutLogEvents"],
+  "Resource": "*"
+}
+Reason: Lambda functions need IAM roles for permission to access AWS services.
+
+14️⃣ Scenario: You want to ensure no one can delete IAM users or roles accidentally.
+Answer:
+Create a permissions boundary or SCP that denies delete operations:
+{
+  "Effect": "Deny",
+  "Action": ["iam:DeleteUser", "iam:DeleteRole"],
+  "Resource": "*"
+}
+Attach this to all admin roles or Organization root.
+
+15️⃣ Scenario: How can you detect unused IAM roles or users?
+Answer:
+Use IAM Access Advisor → shows last-used data for each permission.
+Use Credential Report → shows last sign-in, key usage, password age.
+Disable or delete users who haven’t accessed in 90+ days.
+
+16️⃣ Scenario: You want to enforce password policies (e.g., 12+ characters, rotation every 90 days).
+Answer:
+Go to IAM → Account Settings → Password Policy
+Set:
+Minimum password length = 12
+Require uppercase/lowercase/special chars
+Enable password expiration and reuse prevention
+
+17️⃣ Scenario: How to allow read-only access to all services in AWS?
+Answer:
+Attach AWS managed policy:
+arn:aws:iam::aws:policy/ReadOnlyAccess
+
+Custom alternative:
+
+{
+  "Effect": "Allow",
+  "Action": ["*"],
+  "Resource": "*",
+  "Condition": {"StringEquals": {"aws:RequestedRegion": "ap-south-1"}}
+}
+
+18️⃣ Scenario: How can you give temporary CLI access to a third-party application securely?
+Answer:
+Create a role with limited permissions.
+Allow STS AssumeRole using external ID condition:
+"Condition": {"StringEquals": {"sts:ExternalId": "trusted-partner-123"}}
+Share only the role ARN, not credentials.
+
+19️⃣ Scenario: You need to ensure IAM users can’t make any changes outside ap-south-1 region.
+Answer:
+Attach a region-restricted policy:
+
+{
+  "Effect": "Deny",
+  "Action": "*",
+  "Resource": "*",
+  "Condition": {
+    "StringNotEquals": {"aws:RequestedRegion": "ap-south-1"}
+  }
+}
+
+20️⃣ Scenario: Your company wants to enforce centralized logging and access control across 5 AWS accounts.
+Answer:
+Use AWS Organizations + SCPs for access control.
+Use CloudTrail Organization Trail to log all accounts to one central S3 bucket.
+Enable AWS Config Aggregator for compliance monitoring.
