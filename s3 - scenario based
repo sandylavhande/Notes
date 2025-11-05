@@ -1,0 +1,144 @@
+You want to host a static website on S3. What are the steps?
+Answer:
+Create an S3 bucket (name must match the domain name, e.g., mywebsite.com).
+Upload website files (HTML, CSS, JS).
+Enable Static Website Hosting under bucket properties.
+Set index document (e.g., index.html) and error document (e.g., error.html).
+Update Bucket Policy to allow s3:GetObject for public access:
+
+{
+  "Effect": "Allow",
+  "Principal": "*",
+  "Action": "s3:GetObject",
+  "Resource": "arn:aws:s3:::mywebsite.com/*"
+}
+Access via the website endpoint URL provided by AWS.
+Bonus: Use CloudFront + ACM SSL certificate to make it HTTPS-enabled.
+
+3️⃣ Scenario: You need to automatically move data older than 30 days to cheaper storage. How?
+Answer:
+Use S3 Lifecycle Policies.
+Create a rule like:
+Transition to S3 Standard-IA after 30 days.
+Transition to S3 Glacier after 90 days.
+Permanently delete after 365 days (optional).
+Configure via the AWS Console, CLI, or JSON rule in the bucket settings.
+
+4️⃣ Scenario: Two users upload objects with the same key name at the same time. What happens?
+Answer:
+In S3, objects are overwritten if they have the same key name.
+If Versioning is enabled, both versions are stored with unique version IDs.
+If Versioning is disabled, the latest upload overwrites the previous object.
+Tip: Always enable Versioning in environments with concurrent uploads.
+
+5️⃣ Scenario: You want to restrict S3 access to only one specific IAM role or VPC.
+Answer:
+Use Bucket Policies with conditions.
+Example 1: Restrict to specific IAM role
+{
+  "Effect": "Allow",
+  "Principal": { "AWS": "arn:aws:iam::123456789012:role/EC2ReadRole" },
+  "Action": "s3:*",
+  "Resource": ["arn:aws:s3:::mybucket", "arn:aws:s3:::mybucket/*"]
+}
+
+Example 2: Restrict to VPC Endpoint
+"Condition": {
+  "StringEquals": {
+    "aws:SourceVpce": "vpce-1a2b3c4d"
+  }
+}
+
+6️⃣ Scenario: Your application is getting “Access Denied” when accessing an S3 object. What steps do you take to troubleshoot?
+
+Answer:
+Check if Bucket Policy or Object ACL allows access.
+Confirm IAM role or user policy grants s3:GetObject permission.
+Verify S3 Block Public Access settings (may override policies).
+If accessing from VPC, confirm VPC Endpoint policy allows it.
+Check if the object is encrypted with KMS — the IAM user/role must have permission for the KMS key.
+
+7️⃣ Scenario: You need to replicate objects between regions automatically. How will you configure it?
+Answer:
+Use Cross-Region Replication (CRR).
+Requirements:
+Enable Versioning on both source and destination buckets.
+Set replication rule specifying destination bucket & region.
+Attach IAM role with replication permissions.
+Choose replication options: entire bucket or specific prefixes/tags.
+S3 automatically replicates new objects (not old ones).
+
+8️⃣ Scenario: You have millions of small files — S3 listing is slow. How do you optimize performance?
+Answer:
+Use prefix-based naming to spread load across partitions (e.g., images/2025/11/...).
+Avoid sequential prefixes like file1, file2, file3.
+Use S3 Inventory Reports for metadata instead of listing all objects.
+Consider S3 Batch Operations for large-scale actions.
+
+9️⃣ Scenario: You need to upload 100 GB files to S3 reliably. How can you do that efficiently?
+Answer:
+Use Multipart Upload:
+Splits the file into parts and uploads them in parallel.
+If any part fails, only that part is retried.
+Speeds up large uploads and provides fault tolerance.
+AWS CLI Example:
+aws s3 cp largefile.zip s3://mybucket/ --storage-class STANDARD --expected-size 100G
+
+🔟 Scenario: You need to ensure only encrypted data is stored in S3.
+Answer:
+Enable Bucket Default Encryption (SSE-S3 or SSE-KMS).
+Use a Bucket Policy to enforce encryption:
+{
+  "Effect": "Deny",
+  "Principal": "*",
+  "Action": "s3:PutObject",
+  "Resource": "arn:aws:s3:::mybucket/*",
+  "Condition": {
+    "StringNotEquals": { "s3:x-amz-server-side-encryption": "aws:kms" }
+  }
+}
+
+11️⃣ Scenario: Your S3 bill is very high. How do you analyze and reduce cost?
+
+Answer:
+Enable S3 Storage Lens or Cost Explorer to view usage patterns.
+Check for:
+Old data that can move to Glacier or delete.
+Unused old versions if versioning is enabled.
+Enable Intelligent-Tiering for dynamic cost optimization.
+Use Lifecycle Policies and S3 Object Lambda for efficient management.
+
+12️⃣ Scenario: How do you make sure a user can only upload but not delete objects in S3?
+
+Answer:
+Attach an IAM Policy like:
+{
+  "Effect": "Allow",
+  "Action": ["s3:PutObject"],
+  "Resource": "arn:aws:s3:::mybucket/*"
+},
+{
+  "Effect": "Deny",
+  "Action": ["s3:DeleteObject"],
+  "Resource": "arn:aws:s3:::mybucket/*"
+}
+
+13️⃣ Scenario: How to serve private content (e.g., paid videos) from S3 securely?
+Answer:
+Use CloudFront Signed URLs or Signed Cookies.
+S3 objects stay private; CloudFront validates user signature before allowing download.
+Great for OTT or SaaS use cases.
+
+14️⃣ Scenario: You want to log all access requests to S3 objects.
+Answer:
+Enable S3 Server Access Logging or CloudTrail Data Events.
+Logs can be sent to another S3 bucket for analysis.
+Example use: detect unauthorized access or compliance monitoring.
+
+15️⃣ Scenario: Your S3 replication stopped working. What do you check?
+Answer:
+Ensure versioning is still enabled on both buckets.
+Verify IAM replication role permissions.
+Check replication configuration JSON for prefix/filter mismatches.
+
+Look for KMS encryption issues — destination must allow replication role to use the key.
